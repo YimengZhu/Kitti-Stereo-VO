@@ -13,6 +13,8 @@ using namespace Sophus;
 class Camera {
 
     public:
+        typedef shared_ptr<Camera> Ptr;
+
         float fx_, fy_, cx_, cy_, depth_scale_;
 
         Camera();

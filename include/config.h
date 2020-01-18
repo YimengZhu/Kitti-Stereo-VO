@@ -8,13 +8,13 @@ using namespace cv;
 
 class Config{
 
-    private:
+    public:
         static shared_ptr<Config> config_;
+        
         FileStorage file_;
 
         Config(){}
 
-    public:
         ~Config();
 
         static void setParameterFile(const string& filename)
