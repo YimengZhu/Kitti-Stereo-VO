@@ -1,5 +1,6 @@
 #include "vo.h"
 #include "iostream" 
+#include <utility>
 
 using namespace std;
 
@@ -288,9 +289,18 @@ void VisualOdometry::poseEstimationPnP(){
     cout << "g2o starts" << endl;
     typedef g2o::BlockSolver<g2o::BlockSolverTraits<6,2>> Block;
     Block::LinearSolverType* linearSolver = new g2o::LinearSolverDense<Block::PoseMatrixType>();
-    Block* solver_ptr = new Block(std::unique_ptr<Block::LinearSolverType>(linearSolver));
+    //std::unique_ptr<Block::LinearSolverType> linearSolver(
+    //        new g2o::LinearSolverDense<Block::PoseMatrixType>()
+    //        );
+    
+    // Block* solver_ptr = new Block(std::unique_ptr<Block::LinearSolverType>(linearSolver));
+    Block* solver_ptr(new Block(std::move(linearSolver)));
+    
+    // g2o::OptimizationAlgorithmLevenberg* solver = 
+    //     new g2o::OptimizationAlgorithmLevenberg(std::unique_ptr<Block>(solver_ptr)); 
     g2o::OptimizationAlgorithmLevenberg* solver = 
-        new g2o::OptimizationAlgorithmLevenberg(std::unique_ptr<Block>(solver_ptr));
+        new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+
     g2o::SparseOptimizer optimizer;
     optimizer.setAlgorithm(solver);
     g2o::VertexSE3Expmap* pose = new g2o::VertexSE3Expmap();

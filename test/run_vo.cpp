@@ -4,7 +4,7 @@
 
 #include "config.h"
 #include "vo.h"
-#include <orbextractor.h>
+#include "ORBextractor.h"
 #include <iostream>
 #include <algorithm>
 #include <fstream>
@@ -27,7 +27,7 @@ int main(int argc, char **argv)
     }
     Config::setParameterFile ( argv[1] );
 
-    VisualOdometry::Ptr vo ( new myslam::VisualOdometry );
+    VisualOdometry::Ptr vo ( new VisualOdometry );
     
     vector<string> vstrImageLeft;
     vector<string> vstrImageRight;
@@ -40,7 +40,7 @@ int main(int argc, char **argv)
     cout << "Start processing sequence ..." << endl;
     cout << "Images in the sequence: " << nImages << endl << endl;   
     
-    Camera::Ptr camera ( new myslam::Camera );
+    Camera::Ptr camera ( new Camera );
 
     cv::Mat imLeft, imRight;
     for(int ni=0; ni<nImages; ni++)
@@ -50,19 +50,17 @@ int main(int argc, char **argv)
 
 	if ( imLeft.data==nullptr || imRight.data==nullptr )
             break;
-	Frame::Ptr pFrame = myslam::Frame::createFrame();
+	Frame::Ptr pFrame = Frame::createFrame();
 
 	pFrame->camera_ = camera;
 	pFrame->image_left_ = imLeft;
 	pFrame->image_right_= imRight;
 	pFrame->time_stamp_ = vTimestamps[ni];
-	boost::timer timer;
 
 	vo->addFrame ( pFrame );
 
-    cout<<"VO costs time: "<<timer.elapsed()<<endl;
 	cout << "*******************************" << endl;
-	if ( vo->state_ == myslam::VisualOdometry::LOST )
+	if ( vo->state_ == VisualOdometry::LOST )
         break;
 	SE3 Tcw = pFrame->T_c_w_.inverse();
 

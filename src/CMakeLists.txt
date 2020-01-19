@@ -1,4 +1,5 @@
 add_library( myslam SHARED
+    ORBextractor.cpp
     frame.cpp
     mappoint.cpp
     map.cpp
