@@ -2,7 +2,8 @@
 #define CONFIG_H
 
 #include <opencv2/core/core.hpp>
-
+#include <memory>
+#include <string>
 using namespace std;
 using namespace cv;
 
@@ -17,7 +18,7 @@ class Config{
 
         ~Config();
 
-        static void setParameterFile(const string& filename)
+        static void setParameterFile(const string& filename);
 
         template<typename T>
         static T get(const string& key) {

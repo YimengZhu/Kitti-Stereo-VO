@@ -1,13 +1,13 @@
 #include "vo.h"
-#include "config.h"
-#include "orbextractor.h"
-#include "g2o_types.h"
+#include "iostream" 
+
+using namespace std;
 
 VisualOdometry::VisualOdometry()
     :state_(INITIALIZING), 
      ref_ (nullptr), 
      curr_(nullptr), 
-     map_(new Map), 
+     map_(new SLAMMap), 
      num_lost_(0),
      num_inliers_(0){
     match_ratio_        = Config::get<float>("match_ratio");
@@ -17,7 +17,7 @@ VisualOdometry::VisualOdometry()
     key_frame_min_trans_= Config::get<double>("keyframe_translation");
     mbf_                = Config::get<double>("Camera.mbf");
     float fx_           = Config::get<float>("Camera.fx");
-    mb_                 = mbf / fx_;
+    mb_                 = mbf_ / fx_;
     int nFeatures       = Config::get<int>("ORBextractor.nFeatures");
     float fScaleFactor  = Config::get<float>("ORBextractor.scaleFactor");
     int nLevels         = Config::get<int>("ORBextractor.nLevels");
@@ -55,9 +55,9 @@ bool VisualOdometry::addFrame(Frame::Ptr frame){
             featureMatching();
             poseEstimationPnP();
             
-            if(checkEstimatedPose == true) {
+            if(checkEstimatedPose() == true) {
                 num_lost_ = 0;
-                curr_->T_c_w_ = T_c_w_estimated_ * ref_->T_c_w_;
+                curr_->T_c_w_ = T_c_r_estimated_ * ref_->T_c_w_;
                 ref_=curr_;
                 setRef3DPoints();
                 if(checkKeyFrame() == true) addKeyFrame();
@@ -87,7 +87,7 @@ void VisualOdometry::extractORB_right(const Mat& imageright){
 
 void VisualOdometry::extractKeyPoints(const Mat& left, const Mat& right){
     extractORB_left(left);
-    extractORB_right(rigth);
+    extractORB_right(right);
 }
 
 void VisualOdometry::computeStereoMatches(){
@@ -98,13 +98,13 @@ void VisualOdometry::computeStereoMatches(){
     mvDepth_ = vector<float>(keypoints_curr_left_.size(), -1.0f);
 
     const int thOrbDist = (TH_HIGH + TH_LOW) / 2;
-    const int = nRows = ORBextractorLeft_->mvImagePyramid[0].rows;
+    const int nRows = ORBextractorLeft_->mvImagePyramid[0].rows;
 
     vector<vector<size_t>> vRowIndices(nRows, vector<size_t>());
-    for(int i = 0; i < nRows; i++) vRowIndices[i].reverse(200);
+    for(int i = 0; i < nRows; i++) vRowIndices[i].reserve(200);
 
     for(int i = 0; i < keypoints_curr_right_.size(); i++){
-        const cv::KeyPoint ¬kp = keypoints_curr_right_[i];
+        const cv::KeyPoint &kp = keypoints_curr_right_[i];
         const float &kpY = kp.pt.y;
         const float r = 2.0f * mvScaleFactors[keypoints_curr_right_[i].octave];
         const int maxr = ceil(kpY + r);
@@ -120,7 +120,7 @@ void VisualOdometry::computeStereoMatches(){
     for(int i = 0; i < keypoints_curr_left_.size(); i++){
         const cv::KeyPoint &kpL = keypoints_curr_left_[i];
         const int &levelL = kpL.octave;
-        const float &vL = kpL.pt.y, &ul = kpL.pt.x;
+        const float &vL = kpL.pt.y, &uL = kpL.pt.x;
         
         const vector<size_t> &vCandidates = vRowIndices[vL];
         if(vCandidates.empty()) continue;
@@ -170,7 +170,7 @@ void VisualOdometry::computeStereoMatches(){
             vector<float> vDists;
             vDists.resize(2 * L + 1);
 
-            const float iniu = scaleduR0 - w, endu = scaleduR0 + L + W + 1;
+            const float iniu = scaleduR0 - w, endu = scaleduR0 + L + w + 1;
             if(iniu < 0 || endu >= ORBextractorRight_->mvImagePyramid[kpL.octave].cols)
                 continue;
             
@@ -192,14 +192,14 @@ void VisualOdometry::computeStereoMatches(){
 
             if(bestIdR == -L || bestIdR == L) continue;
 
-            const float dist1 = vDists[L + bestIncR - 1];
-            const float dist2 = vDists[L+bestincR];
-            const float dist3 = vDists[L+bestincR+1];
+            const float dist1 = vDists[L + bestIdR - 1];
+            const float dist2 = vDists[L+bestIdR];
+            const float dist3 = vDists[L+bestIdR + 1];
             const float deltaR = (dist1-dist3)/(2.0f*(dist1+dist3-2.0f*dist2));
             if(deltaR < -1 || deltaR > 1) continue;
 
             float bestuR = mvScaleFactors[kpL.octave] *
-                ((float)scaleduR0 + (float)bestincR + deltaR);
+                ((float)scaleduR0 + (float)bestIdR + deltaR);
 
             float disparity = (uL -bestuR);
 
@@ -208,12 +208,12 @@ void VisualOdometry::computeStereoMatches(){
                     disparity = 0.01;
                     bestuR = uL - 0.01;
                 }
-                mvDepth_[iL]=mbf_/disparity;
-                mvuRight_[iL] = bestuR;
-                vDistIdx.push_back(pair<int,int>(bestDist,iL));
+                mvDepth_[i]=mbf_/disparity;
+                mvuRight_[i] = bestuR;
+                vDistIdx.push_back(pair<int,int>(bestDist,i));
             }
         }
-        sort(vDistIdx.begin(), vDists.end());
+        sort(vDistIdx.begin(), vDistIdx.end());
         const float median = vDistIdx[vDistIdx.size() / 2].first;
         const float thDist = 1.5f * 1.4f * median;
 
@@ -236,7 +236,7 @@ void VisualOdometry::setRef3DPoints(){
         double depth = mvDepth_[i];
         if(depth > 0){
             Vector2d pixel(keypoints_curr_left_[i].pt.x, keypoints_curr_left_[i].pt.y);
-            Vector3d p_c = ref->camera_->pixel2camera(pixel, depth);
+            Vector3d p_c = ref_->camera_->pixel2camera(pixel, depth);
             pts_3d_ref_.push_back(cv::Point3f(p_c(0, 0), p_c(1, 0), p_c(2,0)));
             descriptors_ref_left_.push_back(descriptors_curr_left_.row(i));
         }
@@ -256,14 +256,14 @@ void VisualOdometry::featureMatching(){
 
     feature_matches_.clear();
     for(cv::DMatch& m:matches){
-        if(m.distance<max<float>>(min_dis * match_ratio_, 30))
+        if(m.distance < max<float>(min_dis * match_ratio_, 30))
             feature_matches_.push_back(m);
     }
     cout<<"good matches: "<<feature_matches_.size()<<endl;
 }
 
 
-oid VisualOdometry::poseEstimationPnP(){
+void VisualOdometry::poseEstimationPnP(){
     vector<cv::Point3f> pts3d;
     vector<cv::Point2f> pts2d;
     for (cv::DMatch m:feature_matches_){
@@ -288,7 +288,7 @@ oid VisualOdometry::poseEstimationPnP(){
     cout << "g2o starts" << endl;
     typedef g2o::BlockSolver<g2o::BlockSolverTraits<6,2>> Block;
     Block::LinearSolverType* linearSolver = new g2o::LinearSolverDense<Block::PoseMatrixType>();
-    Block* solver_ptr = new Block( std::unique_ptr<Block::LinearSolverType>(linearSolver));
+    Block* solver_ptr = new Block(std::unique_ptr<Block::LinearSolverType>(linearSolver));
     g2o::OptimizationAlgorithmLevenberg* solver = 
         new g2o::OptimizationAlgorithmLevenberg(std::unique_ptr<Block>(solver_ptr));
     g2o::SparseOptimizer optimizer;
@@ -325,13 +325,13 @@ bool VisualOdometry::checkEstimatedPose(){
         return false;
     }
 
-    Sopuhs::Vector6d d = T_c_r_estimated_.log();
+    Sophus::Vector6d d = T_c_r_estimated_.log();
     if(d.norm() > 5.0) {
         cout<<"reject because motion is too large: "<<d.norm()<<endl;
         return false;
     }
     
-    return ture;
+    return true;
 }
 
 
@@ -348,5 +348,5 @@ bool VisualOdometry::checkKeyFrame(){
 
 void VisualOdometry::addKeyFrame(){
     cout << "adding a key frame" << endl;
-    map->insertKeyFrame(curr_);
+    map_->insertKeyFrame(curr_);
 }

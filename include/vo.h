@@ -1,8 +1,11 @@
 #ifndef VISUALODOMETRY_H
 #define VISUALODOMETRY_H
 
+#include "g2o_types.h"
+#include "config.h"
+#include <memory>
 #include "map.h"
-#include "orbextractor.h"
+#include "ORBextractor.h"
 #include <vector>
 #include <math.h>
 #include <opencv2/core/core.hpp>
@@ -23,14 +26,14 @@ class VisualOdometry{
         typedef shared_ptr<VisualOdometry> Ptr;
         
         enum VOState{
-            INITIALINZING = -1,
-            Ok = 0,
+            INITIALIZING = -1,
+            OK = 0,
             LOST
-        }
+        };
 
         VOState state_;
 
-        Map::Ptr map_;
+        SLAMMap::Ptr map_;
 
         Frame::Ptr ref_, curr_;
 
@@ -38,9 +41,9 @@ class VisualOdometry{
 
         ORBextractor *ORBextractorLeft_, *ORBextractorRight_;
 
-        vector<cv::KeyPoint> keypoints_curr_left_ keypoints_curr_right_;
+        vector<cv::KeyPoint> keypoints_curr_left_, keypoints_curr_right_;
 
-        Mat descriptors_curr_left_, descriptors_curr_right_, descriptors_ref_left;
+        Mat descriptors_curr_left_, descriptors_curr_right_, descriptors_ref_left_;
         
         vector<DMatch> feature_matches_;
 
@@ -90,6 +93,6 @@ class VisualOdometry{
         bool checkEstimatedPose(); 
     
         bool checkKeyFrame();
-}
+};
 
 #endif

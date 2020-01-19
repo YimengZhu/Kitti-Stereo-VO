@@ -26,8 +26,6 @@
 #include <opencv/cv.h>
 
 
-namespace ORB_SLAM2
-{
 
 class ExtractorNode
 {
@@ -84,6 +82,8 @@ public:
 
     std::vector<cv::Mat> mvImagePyramid;
 
+    static int DescriptorDistance(const cv::Mat &a, const cv::Mat &b);
+
 protected:
 
     void ComputePyramid(cv::Mat image);
@@ -110,7 +110,6 @@ protected:
     std::vector<float> mvInvLevelSigma2;
 };
 
-} //namespace ORB_SLAM
 
 #endif
 

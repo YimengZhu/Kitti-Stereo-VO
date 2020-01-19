@@ -5,7 +5,7 @@ void EdgeProjectXYZRGBD::computeError() {
         static_cast<const g2o::VertexSBAPointXYZ*>(_vertices[0]);
     const g2o::VertexSE3Expmap* pose =
         static_cast<const g2o::VertexSE3Expmap*>(_vertices[1]);
-    _error = _measturement - pose->estimate().map(point->estimate());
+    _error = _measurement - pose->estimate().map(point->estimate());
 }
 
 

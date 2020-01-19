@@ -1,13 +1,13 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+#include <memory>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <sophus/se3.h>
 #include <sophus/so3.h>
 
 using namespace std;
-using namespace Eigen;
 using namespace Sophus;
 
 class Camera {
@@ -33,6 +33,6 @@ class Camera {
         Vector3d pixel2world ( const Vector2d& p_p, const SE3& T_c_w, double depth=1 );
 
         Vector2d world2pixel ( const Vector3d& p_w, const SE3& T_c_w );
-}
+};
 
 #endif

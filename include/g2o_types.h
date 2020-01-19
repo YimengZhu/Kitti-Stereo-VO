@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include "camera.h"
-#include "<Eigen/core>"
+#include <Eigen/Core>
 #include <g2o/core/base_vertex.h>
 #include <g2o/core/base_unary_edge.h>
 #include <g2o/core/block_solver.h>
@@ -15,8 +15,8 @@
 
 class EdgeProjectXYZRGBD : public g2o::BaseBinaryEdge<3, Eigen::Vector3d, 
     g2o::VertexSBAPointXYZ, g2o::VertexSE3Expmap>{
-    public::
-        EIGEN_MAKE_ALGNED_OPERATOR_NEW;
+    public:
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
         virtual void computeError();
         virtual void linearizeOplus();
         virtual bool read(std::istream& in){};
@@ -27,7 +27,7 @@ class EdgeProjectXYZRGBD : public g2o::BaseBinaryEdge<3, Eigen::Vector3d,
 class EdgeProjectXYZRGBDPoseOnly : public g2o::BaseUnaryEdge<3, 
     Eigen::Vector3d, g2o::VertexSE3Expmap>{
     public:
-        EIGEN_MAKE_ALGNED_OPERATOR_NEW
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         Vector3d point_;
         virtual void computeError();
         virtual void linearizeOplus();
@@ -39,7 +39,7 @@ class EdgeProjectXYZRGBDPoseOnly : public g2o::BaseUnaryEdge<3,
 class EdgeProjectXYZ2UVPoseOnly : public g2o::BaseUnaryEdge<2, 
     Eigen::Vector2d, g2o::VertexSE3Expmap>{
     public:
-        EIGEN_MAKE_ALGNED_OPERATOR_NEW
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         Vector3d point_;
         Camera* camera_;
         virtual void computeError();

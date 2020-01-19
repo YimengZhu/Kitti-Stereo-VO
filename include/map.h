@@ -1,20 +1,21 @@
 #ifndef MAP_H
 #define MAP_H
 
+#include <memory>
 #include "frame.h"
 #include "mappoint.h"
-#include "<unordered_map>"
+#include <unordered_map>
 
-class Map{
+class SLAMMap{
 
     public:
-        typedef shared_ptr<Map> Ptr;
+        typedef shared_ptr<SLAMMap> Ptr;
         
         unordered_map<unsigned long, MapPoint::Ptr> map_points_;
 
         unordered_map<unsigned long, Frame::Ptr> keyframes_;
 
-        Map(){}
+        SLAMMap(){}
 
         void insertKeyFrame(Frame::Ptr frame);
 
